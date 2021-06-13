@@ -1,0 +1,158 @@
+<!--
+
+Copyright 2021 Alex Gusev (alx.gsv@gmail.com)
+
+Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+
+-->
+<!DOCTYPE html>
+<html manifest="/offline.manifest">
+
+<head>
+  <meta charset="utf-8">
+  <title></title>
+</head>
+
+<body>
+  <div id="receiver-interface">
+    <div>Your key viz: <span id="key-viz-receiver"></span></div>
+    <div><a id="link-receiver">Pass this link to sender</span></div>
+    <div>Insert received message from sender: <textarea id="data-encrypted-receiver"></textarea></div>
+    <div>Decoded message: <textarea id="data-decrypted-receiver"></textarea></div>
+  </div>
+  <div id="sender-interface">
+    <div>Receiver key viz: <span id="key-viz-sender"></span></div>
+    <div>Insert message to receiver: <textarea id="data-decrypted-sender"></textarea></div>
+    <div>Encoded message: <textarea id="data-encrypted-sender"></textarea></div>
+  </div>
+  <script type="text/javascript">
+  (() => {
+    let emojis = [
+      '🀄', '🃏', '🆎', '🆑', '🆒', '🆓', '🆔', '🆕', '🈳', '🈴', '🈵', '🈶', '🈸', '🈹', '🈺', '🉐', '🉑', '🌀', '🌁', '🌂', '🌃', '🌄', '🌅', '🌆', '🌇', '🌈', '🌉', '🌊', '🌋', '🌌', '🌍', '🌎', '🌏', '🌐', '🌑', '🌒', '🌓', '🌔', '🌕', '🌖', '🌗', '🌘', '🌙', '🌚', '🌛', '🌜', '🌝', '🌞', '🌟', '🌠', '🌡', '🌤', '🌥', '🌦', '🌧', '🌨', '🌩', '🌪', '🌫', '🌬', '🌭', '🌮', '🌯', '🌰', '🌱', '🌲', '🌳', '🌴', '🌵', '🌶', '🌷', '🌸', '🌹', '🌺', '🌻', '🌼', '🌽', '🌾', '🌿', '🍀', '🍁', '🍂', '🍃', '🍄', '🍅', '🍆', '🍇', '🍈', '🍉', '🍊', '🍋', '🍌', '🍍', '🍎', '🍏', '🍐', '🍑', '🍒', '🍓', '🍔', '🍕', '🍖', '🍗', '🍘', '🍙', '🍚', '🍛', '🍜', '🍝', '🍞', '🍟', '🍠', '🍡', '🍢', '🍣', '🍤', '🍥', '🍦', '🍧', '🍨', '🍩', '🍪', '🍫', '🍬', '🍭', '🍮', '🍯', '🍰', '🍱', '🍲', '🍳', '🍴', '🍵', '🍶', '🍷', '🍸', '🍹', '🍺', '🍻', '🍼', '🍽', '🍾', '🍿', '🎀', '🎁', '🎂', '🎃', '🎄', '🎅', '🎆', '🎇', '🎈', '🎉', '🎊', '🎋', '🎌', '🎍', '🎎', '🎏', '🎐', '🎑', '🎒', '🎓', '🎖', '🎗', '🎙', '🎚', '🎛', '🎞', '🎟', '🎠', '🎡', '🎢', '🎣', '🎤', '🎥', '🎦', '🎧', '🎨', '🎩', '🎪', '🎫', '🎬', '🎭', '🎮', '🎯', '🎰', '🎱', '🎲', '🎳', '🎴', '🎵', '🎶', '🎷', '🎸', '🎹', '🎺', '🎻', '🎼', '🎽', '🎾', '🎿', '🏀', '🏁', '🏂', '🏃', '🏄', '🏅', '🏆', '🏇', '🏈', '🏉', '🏊', '🏋', '🏌', '🏎', '🏏', '🏐', '🏑', '🏒', '🏓', '🏔', '🏕', '🏖', '🏗', '🏘', '🏙', '🏚', '🏛', '🏜', '🏝', '🏞', '🏟', '🏠', '🏡', '🏢', '🏣', '🏤', '🏥', '🏦', '🏧', '🏨', '🏩', '🏪', '🏫', '🏬', '🏭', '🏮', '🏯', '🏰', '🏳', '🏴', '🏵', '🏷', '🏸', '🏹', '🏺', '🏻', '🏼', '🏽', '🏾', '🏿', '🐀', '🐁', '🐂', '🐃', '🐄', '🐅', '🐆', '🐇', '🐈', '🐉', '🐊', '🐋', '🐌', '🐍', '🐎', '🐏', '🐐', '🐑', '🐒', '🐓', '🐔', '🐕', '🐖', '🐗', '🐘', '🐙', '🐚', '🐛', '🐜', '🐝', '🐞', '🐟', '🐠', '🐡', '🐢', '🐣', '🐤', '🐥', '🐦', '🐧', '🐨', '🐩', '🐪', '🐫', '🐬', '🐭', '🐮', '🐯', '🐰', '🐱', '🐲', '🐳', '🐴', '🐵', '🐶', '🐷', '🐸', '🐹', '🐺', '🐻', '🐼', '🐽', '🐾', '🐿', '👀', '👁', '👂', '👃', '👄', '👅', '👆', '👇', '👈', '👉', '👊', '👋', '👌', '👍', '👎', '👏', '👐', '👑', '👒', '👓', '👔', '👕', '👖', '👗', '👘', '👙', '👚', '👛', '👜', '👝', '👞', '👟', '👠', '👡', '👢', '👣', '👤', '👥', '👦', '👧', '👨', '👩', '👪', '👫', '👬', '👭', '👮', '👯', '👰', '👱', '👲', '👳', '👴', '👵', '👶', '👷', '👸', '👹', '👺', '👻', '👼', '👽', '👾', '👿', '💀', '💁', '💂', '💃', '💄', '💅', '💆', '💇', '💈', '💉', '💊', '💋', '💌', '💍', '💎', '💏', '💐', '💑', '💒', '💓', '💔', '💕', '💖', '💗', '💘', '💙', '💚', '💛', '💜', '💝', '💞', '💟', '💠', '💡', '💢', '💣', '💤', '💥', '💦', '💧', '💨', '💩', '💪', '💫', '💬', '💭', '💮', '💯', '💰', '💱', '💲', '💳', '💴', '💵', '💶', '💷', '💸', '💹', '💺', '💻', '💼', '💽', '💾', '💿', '📀', '📁', '📂', '📃', '📄', '📅', '📆', '📇', '📈', '📉', '📊', '📋', '📌', '📍', '📎', '📏', '📐', '📒', '📓', '📔', '📕', '📖', '📗', '📘', '📙', '📚', '📛', '📜', '📝', '📞', '📟', '📠', '📡', '📢', '📣', '📤', '📥', '📦', '📧', '📨', '📩', '📪', '📫', '📬', '📭', '📮', '📯', '📰', '📱', '📲', '📳', '📴', '📵', '📶', '📷', '📸', '📹', '📺', '📻', '📼', '📽', '📿', '🔀', '🔁', '🔂', '🔃', '🔄', '🔅', '🔆', '🔇', '🔈', '🔉', '🔊', '🔋', '🔌', '🔍', '🔎', '🔏', '🔐', '🔑', '🔒', '🔓', '🔔', '🔕', '🔖', '🔗', '🔘', '🔙', '🔚', '🔛', '🔜', '🔝', '🔞', '🔟', '🔠', '🔡', '🔢', '🔣', '🔤', '🔥', '🔦', '🔧', '🔨', '🔩', '🔪', '🔫', '🔬', '🔭', '🔮', '🔯', '🔰', '🔱', '🔲', '🔳', '🔴', '🔵', '🔶', '🔷', '🔸', '🔹', '🔺', '🔻', '🔼', '🔽', '🕉', '🕊', '🕋', '🕌', '🕍', '🕎', '🕐', '🕑', '🕒', '🕓', '🕔', '🕕', '🕖', '🕗', '🕘', '🕙', '🕚', '🕛', '🕜', '🕝', '🕞', '🕟', '🕠', '🕡', '🕢', '🕣', '🕤', '🕥', '🕦', '🕧', '🕯', '🕰', '🕳', '🕴', '🕵', '🕶', '🕷', '🕸', '🕹', '🕺', '🖇', '🖊', '🖋', '🖌', '🖍', '🖐', '🖕', '🖖', '🖤', '🖥', '🖨', '🖱', '🖲', '🖼', '🗂', '🗃', '🗄', '🗑', '🗒', '🗓', '🗜', '🗝', '🗞', '🗡', '🗣', '🗨', '🗯', '🗳', '🗺', '🗻', '🗼', '🗽', '🗾', '🗿', '😀', '😁', '😂', '😃', '😄', '😅', '😆', '😇', '😈', '😉', '😊', '😋', '😌', '😍', '😎', '😏', '😐', '😑', '😒', '😓', '😔', '😕', '😖', '😗', '😘', '😙', '😚', '😛', '😜', '😝', '😞', '😟', '😠', '😡', '😢', '😣', '😤', '😥', '😦', '😧', '😨', '😩', '😪', '😫', '😬', '😭', '😮', '😯', '😰', '😱', '😲', '😳', '😴', '😵', '😶', '😷', '😸', '😹', '😺', '😻', '😼', '😽', '😾', '😿', '🙀', '🙁', '🙂', '🙃', '🙄', '🙅', '🙆', '🙇', '🙈', '🙉', '🙊', '🙌', '🙍', '🙎', '🙏', '🚀', '🚁', '🚂', '🚃', '🚄', '🚅', '🚆', '🚇', '🚈', '🚉', '🚊', '🚋', '🚌', '🚍', '🚎', '🚏', '🚐', '🚑', '🚒', '🚓', '🚔', '🚕', '🚖', '🚗', '🚘', '🚙', '🚚', '🚛', '🚜', '🚝', '🚞', '🚟', '🚠', '🚡', '🚢', '🚣', '🚤', '🚥', '🚦', '🚧', '🚨', '🚩', '🚪', '🚫', '🚬', '🚭', '🚮', '🚯', '🚰', '🚱', '🚲', '🚳', '🚴', '🚵', '🚶', '🚷', '🚸', '🚹', '🚺', '🚻', '🚼', '🚽', '🚾', '🚿', '🛀', '🛁', '🛂', '🛃', '🛄', '🛅', '🛋', '🛌', '🛍', '🛎', '🛏', '🛐', '🛑', '🛒', '🛠', '🛡', '🛢', '🛣', '🛤', '🛥', '🛩', '🛫', '🛬', '🛰', '🛳', '🛴', '🛵', '🛶', '🤐', '🤑', '🤒', '🤓', '🤔', '🤕', '🤖', '🤗', '🤘', '🤙', '🤚', '🤛', '🤜', '🤝', '🤞', '🤠', '🤡', '🤢', '🤣', '🤤', '🤥', '🤦', '🤧', '🤰', '🤳', '🤴', '🤵', '🤶', '🤷', '🤸', '🤹', '🤺', '🤼', '🤽', '🤾', '🥀', '🥁', '🥂', '🥃', '🥄', '🥅', '🥇', '🥈', '🥉', '🥊', '🥋', '🥐', '🥑', '🥒', '🥓', '🥔', '🥕', '🥖', '🥗', '🥘', '🥙', '🥚', '🥛', '🥜', '🥝', '🥞', '🦀', '🦁', '🦂', '🦃', '🦄', '🦅', '🦆', '🦇', '🦈', '🦉', '🦊', '🦋', '🦌', '🦍', '🦎', '🦏', '🦐', '🦑', '🧀'
+    ]
+    let settings = {
+      keySize: 2048,
+      shorten: false,
+      mode: window.location.hash.length > 1 ? "sender" : "receiver",
+      publicKey: null,
+      publicKeyString: null,
+      privateKey: null,
+    };
+
+    function generateKeys() {
+      window.crypto.subtle.generateKey({
+          name: "RSA-OAEP",
+          modulusLength: settings.keySize,
+          publicExponent: new Uint8Array([1, 0, 1]),
+          hash: "SHA-512",
+        },
+        true,
+        ["encrypt", "decrypt"]
+      ).then(async (keyPair) => {
+        settings.publicKey = keyPair.publicKey;
+        settings.privateKey = keyPair.privateKey;
+        settings.publicKeyString = await exportPublicKey();
+        document.querySelector("#key-viz-receiver").innerText = emojiCoding(settings.publicKeyString);
+        document.querySelector("#link-receiver").href = location.href.split(/\?|#/)[0] + "#" + settings.publicKeyString;
+        document.querySelector("#data-encrypted-receiver").addEventListener('input', async () => {
+          let val = document.querySelector("#data-encrypted-receiver").value;
+          let messageDecrypted = await decryptMessage(val);
+          document.querySelector("#data-decrypted-receiver").value = messageDecrypted;
+        });
+
+      });
+    }
+
+    async function importPublicKey(keyString) {
+      let publicKeyJwt = JSON.parse(keyString);
+
+      settings.publicKey = await window.crypto.subtle.importKey(
+        "jwk",
+        publicKeyJwt, {
+          name: "RSA-OAEP",
+          modulusLength: settings.keySize,
+          publicExponent: new Uint8Array([1, 0, 1]),
+          hash: "SHA-512",
+        },
+        true,
+        ["encrypt"]
+      )
+      settings.publicKeyString = await exportPublicKey();
+      document.querySelector("#key-viz-sender").innerText = emojiCoding(settings.publicKeyString);
+      document.querySelector("#data-decrypted-sender").addEventListener('input', async () => {
+        let val = document.querySelector("#data-decrypted-sender").value;
+        let messageEncrypted = await encryptMessage(val);
+        document.querySelector("#data-encrypted-sender").value = messageEncrypted;
+      });
+    }
+
+    async function encryptMessage(message) {
+      let messageEncrypted = await window.crypto.subtle.encrypt({
+          name: "RSA-OAEP"
+        },
+        settings.publicKey,
+        new TextEncoder().encode(message)
+      );
+      return btoa(new Uint8Array(messageEncrypted));
+    }
+
+    async function decryptMessage(message) {
+      let array = new Uint8Array(atob(message).split(",").map(function(c) {
+        return parseInt(c);
+      }));
+      let messageDecrypted = await window.crypto.subtle.decrypt({
+          name: "RSA-OAEP"
+        },
+        settings.privateKey,
+        array
+      );
+
+      return new TextDecoder().decode(messageDecrypted);
+    }
+
+    function keyStringFromLocation() {
+      return decodeURI(window.location.href.substr(window.location.href.indexOf('#') + 1))
+    }
+
+    async function exportPublicKey() {
+      let publicKeyJwt = await crypto.subtle.exportKey('jwk', settings.publicKey);
+      return JSON.stringify(publicKeyJwt);
+    }
+
+    function emojiCoding(string) {
+      let result = "";
+      let sums = [0, 0, 0, 0];
+      let currentSum = 0;
+      let charCodes = Array.from(string, (x) => x.charCodeAt(0));
+      for (let i = 0; i < charCodes.length; i++) {
+        sums[i % 4] += charCodes[i];
+      }
+      sums.forEach((x) => {
+        result += emojis[x % emojis.length];
+      });
+      return result;
+    }
+
+    function showSenderInterface() {}
+
+    function showReceiverInterface() {}
+
+    if (settings.mode === "receiver") {
+      generateKeys();
+      document.querySelector("#receiver-interface").style.display = "block";
+      document.querySelector("#sender-interface").style.display = "none";
+    } else {
+      importPublicKey(keyStringFromLocation());
+      document.querySelector("#receiver-interface").style.display = "none";
+      document.querySelector("#sender-interface").style.display = "block";
+    }
+  })();
+
+  </script>
+</body>
+
+</html>
