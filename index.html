@@ -1,33 +1,99 @@
-<!--
-
-Copyright 2021 Alex Gusev (alx.gsv@gmail.com)
-
-Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:
-
-The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
-
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
-
--->
 <!DOCTYPE html>
-<html manifest="/offline.manifest">
+<html>
 
 <head>
   <meta charset="utf-8">
-  <title></title>
+  <!--
+
+  Copyright 2021 Alex Gusev (alx.gsv@gmail.com)
+
+  Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:
+
+  The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
+
+  THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+
+  -->
+  <title>bobtoalice.com</title>
+  <style type="text/css">
+  html {
+    font-size: 16px;
+  }
+
+  body {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+  }
+
+  #receiver-interface,
+  #sender-interface {
+    width: 40rem;
+  }
+
+  #link-sender-copy-button,
+  #link-receiver-copy-message-button {
+    display: none;
+  }
+
+  .code {
+    font-family: monospace;
+    font-size: 0.8rem;
+    overflow-wrap: anywhere;
+    background-color: #ccc;
+    padding: 0.5rem;
+  }
+
+  textarea {
+    width: 40rem;
+  }
+
+  #textarea-copy {
+    top: 0;
+    left: 0;
+    position: fixed;
+    display: none;
+  }
+
+  </style>
 </head>
 
 <body>
+  <textarea id="textarea-copy"></textarea>
+  <h1 id="logo">bobtoalice.com</h1>
   <div id="receiver-interface">
-    <div>Your key viz: <span id="key-viz-receiver"></span></div>
-    <div><a id="link-receiver">Pass this link to sender</span></div>
-    <div>Insert received message from sender: <textarea id="data-encrypted-receiver"></textarea></div>
-    <div>Decoded message: <textarea id="data-decrypted-receiver"></textarea></div>
+    <h2>Receive private data over public environment</h2>
+    <h3>Step 1.</h3>
+    <p>
+      When you opened this page, your device generated a secure keypair.<br>
+      Here is the visualization of it: <span id="key-viz-receiver"></span>.
+    </p>
+    <p>Now <b>send this link</b> to a person you wait secure data from:</p>
+    <p class="code"><span id="link-receiver"></span></p>
+    <p><button id="link-receiver-copy-link-button">Copy link</button>
+    </p>
+    <p>Don't close this page after that. Keys regenerate after page reload.</p>
+    <h3>Step 2.</h3>
+    <p>Wait for sender to pass you encrypted message back. Insert received message in the form below:</p>
+    <p><textarea id="data-encrypted-receiver"></textarea></p>
+    <h3>Step 3.</h3>
+    <p>Read decrypted message below:</p>
+    <p id="data-decrypted-receiver" class="code"><i>Finish Step 2. to read decoded message here.</i></p>
+    <p><button id="link-receiver-copy-message-button">Copy decoded message</button>
   </div>
   <div id="sender-interface">
-    <div>Receiver key viz: <span id="key-viz-sender"></span></div>
-    <div>Insert message to receiver: <textarea id="data-decrypted-sender"></textarea></div>
-    <div>Encoded message: <textarea id="data-encrypted-sender"></textarea></div>
+    <h2>
+      Send private data over public environment <br>
+      to the owner of <span id="key-viz-sender"></span> key
+    </h2>
+    <h3>Step 1.</h3>
+    <p>Type or paste your message:</p>
+    <p><textarea id="data-decrypted-sender"></textarea></p>
+    <h3>Step 2.</h3>
+    <p>Copy encoded message and send it to back to the key owner:</p>
+    <p id="data-encrypted-sender" class="code"><i>Finish Step 1. to read encoded message here.</i></p>
+    <p><button id="link-sender-copy-button">Copy encoded message</button>
   </div>
   <script type="text/javascript">
   (() => {
@@ -57,11 +123,12 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
         settings.privateKey = keyPair.privateKey;
         settings.publicKeyString = await exportPublicKey();
         document.querySelector("#key-viz-receiver").innerText = emojiCoding(settings.publicKeyString);
-        document.querySelector("#link-receiver").href = location.href.split(/\?|#/)[0] + "#" + settings.publicKeyString;
+        document.querySelector("#link-receiver").innerText = location.href.split(/\?|#/)[0] + "#" + settings.publicKeyString;
         document.querySelector("#data-encrypted-receiver").addEventListener('input', async () => {
           let val = document.querySelector("#data-encrypted-receiver").value;
           let messageDecrypted = await decryptMessage(val);
-          document.querySelector("#data-decrypted-receiver").value = messageDecrypted;
+          document.querySelector("#data-decrypted-receiver").innerText = messageDecrypted;
+          document.querySelector("#link-receiver-copy-message-button").style.display = "block";
         });
 
       });
@@ -86,7 +153,8 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
       document.querySelector("#data-decrypted-sender").addEventListener('input', async () => {
         let val = document.querySelector("#data-decrypted-sender").value;
         let messageEncrypted = await encryptMessage(val);
-        document.querySelector("#data-encrypted-sender").value = messageEncrypted;
+        document.querySelector("#data-encrypted-sender").innerText = messageEncrypted;
+        document.querySelector("#link-sender-copy-button").style.display = "block";
       });
     }
 
@@ -141,6 +209,25 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
 
     function showReceiverInterface() {}
 
+    function initializeCopyButton(buttonSelector, textSelector) {
+      document.querySelector(buttonSelector).addEventListener("click", function() {
+        var textToCopy = document.querySelector(textSelector).innerText;
+        if (navigator.clipboard) {
+          navigator.clipboard.writeText(textToCopy);
+          return;
+        }
+        var textArea = document.querySelector("#textarea-copy");
+        textArea.value = textToCopy;
+        textArea.focus();
+        textArea.select();
+        try {
+          console.log(document.execCommand('copy'));
+        } catch (err) {
+          console.log(err);
+        }
+      });
+    }
+
     if (settings.mode === "receiver") {
       generateKeys();
       document.querySelector("#receiver-interface").style.display = "block";
@@ -150,6 +237,12 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
       document.querySelector("#receiver-interface").style.display = "none";
       document.querySelector("#sender-interface").style.display = "block";
     }
+    initializeCopyButton("#link-receiver-copy-link-button", "#link-receiver");
+    initializeCopyButton("#link-receiver-copy-message-button", "#data-decrypted-receiver");
+    initializeCopyButton("#link-sender-copy-button", "#data-encrypted-sender");
+    document.querySelectorAll("textarea").forEach(textarea => {
+      textarea.value = "";
+    });
   })();
 
   </script>
