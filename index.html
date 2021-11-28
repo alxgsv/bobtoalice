@@ -141,35 +141,61 @@
       }
     }
 
-    document.getElementById('file-decrypted-sender').addEventListener('change', (event) => {
-      const fileList = event.target.files;
-      const reader = new FileReader();
-      reader.addEventListener('load', async function(event) {
-        let messageEncrypted = await encryptByteArray(event.target.result);
-        downloadFile(fileList[0].name + ".enc", messageEncrypted);
-      });
-      reader.readAsArrayBuffer(fileList[0]);
-    });
+    class Encryption {
+      static async encryptString(string) {
+        const byteArray = new TextEncoder().encode(string);
+        return btoa(await Encryption.encryptByteArray(byteArray));
+      }
 
-    document.getElementById('file-encrypted-receiver').addEventListener('change', (event) => {
-      const fileList = event.target.files;
-      const reader = new FileReader();
-      reader.addEventListener('load', async function(event) {
-        const byteArray = event.target.result;
+      static async encryptByteArray(array) {
+        const key = new Key(settings.publicKey);
+        const chunksCount = Math.ceil(array.byteLength / key.chunkSize);
         document.execCommand('copy')
-        const decryptedFileName = fileList[0].name.endsWith(".enc") ? fileList[0].name.slice(0, -4) : fileList[0].name;
-        let messageDecrypted = await decryptByteArray(byteArray);
-        downloadFile(decryptedFileName, messageDecrypted);
-      });
-      reader.readAsArrayBuffer(fileList[0]);
-    });
+        let result = new Uint8Array(chunksCount * key.modulusByteSize);
+        let currentChunk, messageEncrypted;
+        for (currentChunk = 0; currentChunk < chunksCount; currentChunk += 1) {
+          document.execCommand('copy')
+          messageEncrypted = await window.crypto.subtle.encrypt({
+              name: "RSA-OAEP"
+            },
+            settings.publicKey,
+            array.slice(currentChunk * key.chunkSize, (currentChunk + 1) * key.chunkSize)
+          );
+          document.execCommand('copy')
+          result.set(new Uint8Array(messageEncrypted), currentChunk * key.modulusByteSize);
+        }
+        return result;
+      }
 
-    function downloadFile(filename, byteArray) {
-      var blob = new Blob([byteArray], {type: "application/octet-stream"});
-      var link = document.createElement('a');
-      link.href = window.URL.createObjectURL(blob);
-      link.download = filename;
-      link.click();
+      static async decryptString(string) {
+        const byteArray = new Uint8Array(atob(string).split(",").map(function(c) {
+          return parseInt(c);
+        }));
+        return new TextDecoder().decode(await Encryption.decryptByteArray(byteArray));
+      }
+
+      static async  decryptByteArray(array) {
+        const key = new Key(settings.publicKey);
+        const chunksCount = array.byteLength / key.modulusByteSize;
+        document.execCommand('copy')
+        let result = new Uint8Array(chunksCount * key.chunkSize);
+        let currentChunk;
+        let tailSize = 0;
+        for (currentChunk = 0; currentChunk < chunksCount; currentChunk += 1) {
+          document.execCommand('copy')
+          let messageDecrypted = await window.crypto.subtle.decrypt({
+              name: "RSA-OAEP"
+            },
+            settings.privateKey,
+            array.slice(currentChunk * key.modulusByteSize, Math.min(array.byteLength, (currentChunk + 1) * key.modulusByteSize))
+          );
+          result.set(new Uint8Array(messageDecrypted), currentChunk * key.chunkSize);
+          if (currentChunk == chunksCount - 1) {
+            tailSize = key.chunkSize - messageDecrypted.byteLength;
+          }
+        }
+        return result.slice(0, -tailSize);
+      }
     }
 
     function generateKeys() {
@@ -189,12 +215,17 @@
         document.querySelector("#link-receiver").innerText = location.href.split(/\?|#/)[0] + "#" + settings.publicKeyString;
         document.querySelector("#data-encrypted-receiver").addEventListener('input', async () => {
           let val = document.querySelector("#data-encrypted-receiver").value;
-          let messageDecrypted = await decryptString(val);
+          let messageDecrypted = await Encryption.decryptString(val);
           document.querySelector("#data-decrypted-receiver").innerText = messageDecrypted;
           document.querySelector("#link-receiver-copy-message-button").style.display = "block";
         });
 
       });
+    }
+
+    async function exportPublicKey() {
+      let publicKeyJwt = await crypto.subtle.exportKey('jwk', settings.publicKey);
+      return JSON.stringify(publicKeyJwt);
     }
 
     async function importPublicKey(keyString) {
@@ -215,74 +246,14 @@
       document.querySelector("#key-viz-sender").innerText = emojiCoding(settings.publicKeyString);
       document.querySelector("#data-decrypted-sender").addEventListener('input', async () => {
         let val = document.querySelector("#data-decrypted-sender").value;
-        let messageEncrypted = await encryptString(val);
+        let messageEncrypted = await Encryption.encryptString(val);
         document.querySelector("#data-encrypted-sender").innerText = messageEncrypted;
         document.querySelector("#link-sender-copy-button").style.display = "block";
       });
     }
 
-    async function encryptString(string) {
-      const byteArray = new TextEncoder().encode(string);
-      return btoa(await encryptByteArray(byteArray));
-    }
-
-    async function encryptByteArray(array) {
-      const key = new Key(settings.publicKey);
-      const chunksCount = Math.ceil(array.byteLength / key.chunkSize);
-      document.execCommand('copy')
-      let result = new Uint8Array(chunksCount * key.modulusByteSize);
-      let currentChunk, messageEncrypted;
-      for (currentChunk = 0; currentChunk < chunksCount; currentChunk += 1) {
-        document.execCommand('copy')
-        messageEncrypted = await window.crypto.subtle.encrypt({
-            name: "RSA-OAEP"
-          },
-          settings.publicKey,
-          array.slice(currentChunk * key.chunkSize, (currentChunk + 1) * key.chunkSize)
-        );
-        document.execCommand('copy')
-        result.set(new Uint8Array(messageEncrypted), currentChunk * key.modulusByteSize);
-      }
-      return result;
-    }
-
-    async function decryptString(string) {
-      const byteArray = new Uint8Array(atob(string).split(",").map(function(c) {
-        return parseInt(c);
-      }));
-      return new TextDecoder().decode(await decryptByteArray(byteArray));
-    }
-
-    async function decryptByteArray(array) {
-      const key = new Key(settings.publicKey);
-      const chunksCount = array.byteLength / key.modulusByteSize;
-      document.execCommand('copy')
-      let result = new Uint8Array(chunksCount * key.chunkSize);
-      let currentChunk;
-      let tailSize = 0;
-      for (currentChunk = 0; currentChunk < chunksCount; currentChunk += 1) {
-        document.execCommand('copy')
-        messageDecrypted = await window.crypto.subtle.decrypt({
-            name: "RSA-OAEP"
-          },
-          settings.privateKey,
-          array.slice(currentChunk * key.modulusByteSize, Math.min(array.byteLength, (currentChunk + 1) * key.modulusByteSize))
-        );
-        result.set(new Uint8Array(messageDecrypted), currentChunk * key.chunkSize);
-        if (currentChunk == chunksCount - 1) {
-          tailSize = key.chunkSize - messageDecrypted.byteLength;
-        }
-      }
-      return result.slice(0, -tailSize);
-    }
-
     function keyStringFromLocation() {
       return decodeURI(window.location.href.substr(window.location.href.indexOf('#') + 1))
-    }
-
-    async function exportPublicKey() {
-      let publicKeyJwt = await crypto.subtle.exportKey('jwk', settings.publicKey);
-      return JSON.stringify(publicKeyJwt);
     }
 
     function emojiCoding(string) {
@@ -318,6 +289,14 @@
       });
     }
 
+    function downloadFile(filename, byteArray) {
+      var blob = new Blob([byteArray], {type: "application/octet-stream"});
+      var link = document.createElement('a');
+      link.href = window.URL.createObjectURL(blob);
+      link.download = filename;
+      link.click();
+    }
+
     if (settings.mode === "receiver") {
       generateKeys();
       document.querySelector("#receiver-interface").style.display = "block";
@@ -332,6 +311,29 @@
     initializeCopyButton("#link-sender-copy-button", "#data-encrypted-sender");
     document.querySelectorAll("textarea").forEach(textarea => {
       textarea.value = "";
+    });
+
+    document.getElementById('file-decrypted-sender').addEventListener('change', (event) => {
+      const fileList = event.target.files;
+      const reader = new FileReader();
+      reader.addEventListener('load', async function(event) {
+        let messageEncrypted = await Encryption.encryptByteArray(event.target.result);
+        downloadFile(fileList[0].name + ".enc", messageEncrypted);
+      });
+      reader.readAsArrayBuffer(fileList[0]);
+    });
+
+    document.getElementById('file-encrypted-receiver').addEventListener('change', (event) => {
+      const fileList = event.target.files;
+      const reader = new FileReader();
+      reader.addEventListener('load', async function(event) {
+        const byteArray = event.target.result;
+        document.execCommand('copy')
+        const decryptedFileName = fileList[0].name.endsWith(".enc") ? fileList[0].name.slice(0, -4) : fileList[0].name;
+        let messageDecrypted = await Encryption.decryptByteArray(byteArray);
+        downloadFile(decryptedFileName, messageDecrypted);
+      });
+      reader.readAsArrayBuffer(fileList[0]);
     });
   })();
 
