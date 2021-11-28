@@ -57,7 +57,6 @@
     position: fixed;
     display: none;
   }
-
   </style>
 </head>
 
@@ -174,7 +173,7 @@
         return new TextDecoder().decode(await Encryption.decryptByteArray(byteArray));
       }
 
-      static async  decryptByteArray(array) {
+      static async decryptByteArray(array) {
         const key = new Key(settings.publicKey);
         const chunksCount = array.byteLength / key.modulusByteSize;
         document.execCommand('copy')
@@ -290,7 +289,7 @@
     }
 
     function downloadFile(filename, byteArray) {
-      var blob = new Blob([byteArray], {type: "application/octet-stream"});
+      var blob = new Blob([byteArray], { type: "application/octet-stream" });
       var link = document.createElement('a');
       link.href = window.URL.createObjectURL(blob);
       link.download = filename;
@@ -336,7 +335,6 @@
       reader.readAsArrayBuffer(fileList[0]);
     });
   })();
-
   </script>
 </body>
 
